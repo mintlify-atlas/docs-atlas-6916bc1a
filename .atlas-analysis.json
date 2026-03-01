@@ -1,0 +1,84 @@
+{
+  "projectType": "general",
+  "projectName": "Simon Willison's Tools",
+  "projectDescription": "A collection of 200+ useful HTML/JavaScript and Python tools, almost entirely generated using LLMs.",
+  "theme": "mint",
+  "primaryColor": "#4a90e2",
+  "lightColor": null,
+  "darkColor": null,
+  "navigation": {
+    "groups": [
+      {
+        "group": "Overview",
+        "pages": [
+          "introduction",
+          "quickstart",
+          "contributing"
+        ]
+      },
+      {
+        "group": "Browser Tools",
+        "pages": [
+          "tools/image-media",
+          "tools/text-document",
+          "tools/data-time",
+          "tools/llm-playgrounds",
+          "tools/bluesky-social",
+          "tools/github-dev"
+        ]
+      },
+      {
+        "group": "Python Scripts",
+        "pages": [
+          "python/overview",
+          "python/llm-tools",
+          "python/file-processors",
+          "python/cloud-utils"
+        ]
+      },
+      {
+        "group": "Shell Scripts",
+        "pages": [
+          "bash/overview"
+        ]
+      },
+      {
+        "group": "Reference",
+        "pages": [
+          "reference/architecture",
+          "reference/development",
+          "reference/testing"
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "200+ standalone browser-based tools requiring no installation",
+    "Python scripts executable via uv run from URLs",
+    "LLM-assisted development workflow and prompt-driven tools",
+    "Privacy-focused - most tools run entirely in the browser",
+    "Image and media processing tools (OCR, cropping, conversion)",
+    "Text and document utilities (Markdown, JSON, YAML processing)",
+    "LLM playground tools for Claude, Gemini, and OpenAI",
+    "Bluesky and social media analysis tools",
+    "GitHub integration and development utilities"
+  ],
+  "publicApiSurface": [
+    "HTML Tools - 188+ standalone .html files deployable to any static host",
+    "Python Scripts - 28+ uv-compatible scripts runnable from URLs",
+    "bash/mem.sh - Memory usage monitoring script",
+    "bash/server_manage.sh - Server management utilities",
+    "bash/extract-file-history.sh - Git history extraction",
+    "sloccount.html - Lines of code counter with WebAssembly",
+    "ocr.html - Browser-based OCR with Tesseract.js",
+    "sqlite-wasm.html - SQLite query runner in WebAssembly",
+    "micropython.html - Python REPL in the browser",
+    "gemini-chat.html - Gemini API chat interface",
+    "bluesky-firehose.html - Real-time Bluesky activity viewer",
+    "github-api-write.html - Upload to GitHub repositories",
+    "python/claude_to_markdown.py - Convert Claude logs to Markdown",
+    "python/openai_image.py - Generate images via OpenAI API",
+    "python/mistral_ocr.py - PDF OCR via Mistral API",
+    "python/gguf_inspect.py - Inspect GGUF model files"
+  ]
+}
