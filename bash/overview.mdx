@@ -1,0 +1,138 @@
+---
+title: Shell Scripts
+description: A collection of useful bash scripts for various tasks including Git history extraction, memory monitoring, and server management
+---
+
+# Shell Scripts
+
+These Bash scripts were written using LLMs to automate common development and system administration tasks.
+
+## extract-file-history.sh
+
+Create a brand new Git repository and copy the complete history of a single file from another repository into it. This script preserves all commit metadata including author, date, and commit messages.
+
+### Usage
+
+```bash
+./extract-file-history.sh <source_repo_path> <target_file_path> <new_repo_name> [output_filename]
+```
+
+### Parameters
+
+- `source_repo_path` - Path to the original Git repository
+- `target_file_path` - Path to the file within the source repository
+- `new_repo_name` - Name for the new repository to create
+- `output_filename` (optional) - Name for the file in the new repository (defaults to the original filename)
+
+### Example
+
+Extract the history of a specific file into a new repository:
+
+```bash
+./extract-file-history.sh path/to/repo file-path-within-repo.txt path/to/new-repo
+```
+
+Create a repository with a renamed file:
+
+```bash
+git clone https://github.com/simonw/tools
+./extract-file-history.sh tools llm-prices.html llm-prices index.html
+```
+
+This creates a new repository where every commit that touched `llm-prices.html` is preserved as a commit to `index.html`.
+
+### Features
+
+- Preserves complete Git history including all metadata
+- Follows file renames using `git log --follow`
+- Maintains original author, email, and commit dates
+- Allows renaming the file in the new repository
+- Validates all inputs before processing
+
+## mem.sh
+
+On macOS, display memory usage of running processes grouped by name. Useful for quickly identifying which applications are consuming the most memory.
+
+### Usage
+
+```bash
+./mem.sh
+```
+
+Show all processes instead of just the top 20:
+
+```bash
+./mem.sh --all
+```
+
+### Example Output
+
+```
+   11.58 GB	  167	Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)
+   11.21 GB	   54	Visual Studio Code.app/Contents/Frameworks/Code Helper (Renderer).app/Contents/MacOS/Code Helper (Renderer)
+    2.51 GB	   56	Visual Studio Code.app/Contents/Frameworks/Code Helper.app/Contents/MacOS/Code Helper
+    2.10 GB	   12	Firefox.app/Contents/MacOS/plugin-container.app/Contents/MacOS/plugin-container
+  541.83 MB	    1	Firefox.app/Contents/MacOS/firefox
+  456.03 MB	    1	Visual Studio Code.app/Contents/MacOS/Electron
+```
+
+### Features
+
+- Groups memory usage by process name
+- Shows process count for each group
+- Displays memory in GB or MB as appropriate
+- Sorts by memory usage (highest first)
+- Strips `/Applications/` prefix for cleaner output
+- Defaults to top 20 processes, or use `--all` flag
+
+## server_manage.sh
+
+A CLI tool to start and stop a background Python HTTP server. Useful for quickly serving static files during development.
+
+### Usage
+
+Start a server:
+
+```bash
+./server_manage.sh start <directory> [--port <port>]
+```
+
+Stop a running server:
+
+```bash
+./server_manage.sh stop
+```
+
+### Parameters
+
+- `directory` - Directory to serve (required for start command)
+- `--port` - Port number (optional, defaults to 8000)
+
+### Examples
+
+Start a server on the default port (8000):
+
+```bash
+./server_manage.sh start ./public
+```
+
+Start a server on a custom port:
+
+```bash
+./server_manage.sh start ./dist --port 3000
+```
+
+Stop the running server:
+
+```bash
+./server_manage.sh stop
+```
+
+### Features
+
+- Runs Python's built-in HTTP server in the background
+- Stores process ID in `server.pid` for easy management
+- Validates server started successfully
+- Prevents multiple servers from running simultaneously
+- Automatically resolves directory to absolute path
+- Clean start/stop operations with helpful status messages

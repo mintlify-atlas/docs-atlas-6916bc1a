@@ -1,0 +1,199 @@
+---
+title: Cloud Utilities
+description: Python scripts for managing AWS and Google Cloud Platform resources
+---
+
+Tools for debugging and managing cloud infrastructure, particularly AWS S3 and Google Cloud Platform.
+
+## debug_s3_access.py
+
+Debug why an S3 object cannot be accessed via its public URL by analyzing bucket policies, ACLs, and object permissions.
+
+```bash
+uv run https://tools.simonwillison.net/python/debug_s3_access.py \
+  https://test-public-bucket-simonw.s3.us-east-1.amazonaws.com/0f550b7b28264d7ea2b3d360e3381a95.jpg
+```
+
+Example output:
+
+```
+Analyzing S3 access for:
+Bucket: test-public-bucket-simonw
+Key: 0f550b7b28264d7ea2b3d360e3381a95.jpg
+
+                   S3 Access Analysis Results
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Check                      ┃ Result                      ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ Bucket Exists              │ Yes                         │
+│ Bucket Region              │ default                     │
+│ Key exists                 │ Yes                         │
+│ Bucket Policy              │ { ... }                     │
+│ Object exists              │ Yes                         │
+│ Content Type               │ image/jpeg                  │
+│ Size                       │ 71683 bytes                 │
+│ Last Modified              │ 2024-12-19 03:43:30+00:00   │
+└────────────────────────────┴─────────────────────────────┘
+
+Public Access Settings:
+BlockPublicAcls: False
+IgnorePublicAcls: False
+BlockPublicPolicy: False
+RestrictPublicBuckets: False
+```
+
+The tool checks:
+- Bucket and object existence
+- Bucket policies
+- ACL grants
+- Public access block settings
+- Object metadata
+- Encryption settings
+
+## all_gcp_buckets.py
+
+View the size of files in all of your Google Cloud Platform buckets.
+
+```bash
+uv run https://tools.simonwillison.net/python/all_gcp_buckets.py
+```
+
+**Prerequisites:**
+- [gcloud CLI](https://cloud.google.com/sdk/docs/install) must be installed
+- You must be authenticated: `gcloud auth login`
+
+This creates a directory called `bucket_listings_DATE` containing `.txt` files for each bucket with complete file listings.
+
+## magic_bucket.py
+
+Manage S3 buckets with automatic DynamoDB metadata tracking using Lambda triggers.
+
+### Create a Magic Bucket
+
+Set up a new S3 bucket with automatic metadata tracking:
+
+```bash
+uv run https://tools.simonwillison.net/python/magic_bucket.py \
+  --region us-east-1 \
+  create-bucket my-bucket-name
+```
+
+This command:
+1. Creates an S3 bucket
+2. Creates a DynamoDB table (`{bucket-name}-metadata`)
+3. Creates an IAM role with necessary permissions
+4. Deploys a Lambda function to track changes
+5. Configures S3 event notifications
+
+### List Files
+
+Query the DynamoDB metadata table to list files:
+
+<CodeGroup>
+```bash All Files
+uv run https://tools.simonwillison.net/python/magic_bucket.py \
+  --region us-east-1 \
+  list-files my-bucket-name
+```
+
+```bash With Prefix Filter
+uv run https://tools.simonwillison.net/python/magic_bucket.py \
+  --region us-east-1 \
+  list-files my-bucket-name \
+  --prefix images/
+```
+</CodeGroup>
+
+Output format:
+
+```
+Files in bucket:
+--------------------------------------------------------------------------------
+Filename                                  Size (B)   Content Type         Last Modified
+--------------------------------------------------------------------------------
+images/photo1.jpg                         71683      image/jpeg           2024-12-19...
+images/photo2.jpg                         82451      image/jpeg           2024-12-19...
+```
+
+### How It Works
+
+The Lambda function automatically:
+- **On ObjectCreated**: Adds file metadata to DynamoDB (filename, size, content type, last modified)
+- **On ObjectRemoved**: Removes the entry from DynamoDB
+
+This provides fast querying of bucket contents without listing S3 directly.
+
+### IAM Permissions Created
+
+The setup creates a role with these policies:
+- `AWSLambdaBasicExecutionRole` - For Lambda logging
+- `AmazonDynamoDBFullAccess` - For metadata storage
+- `AmazonS3ReadOnlyAccess` - For reading object metadata
+
+## git_read_only_http.py
+
+Serve a local Git repository over HTTP in read-only mode.
+
+```bash
+uv run https://tools.simonwillison.net/python/git_read_only_http.py \
+  /path/to/repo
+```
+
+By default serves on `localhost:8000`. Use `-H/--host` and `-p/--port` to customize:
+
+```bash
+uv run https://tools.simonwillison.net/python/git_read_only_http.py \
+  /path/to/repo \
+  -H 0.0.0.0 \
+  -p 8080
+```
+
+Clone the served repository:
+
+```bash
+git clone http://localhost:8000/ directory_name
+```
+
+[Claude transcript](https://claude.ai/share/95001fd2-24ea-427e-91f0-6a76f97206e7) showing how this was built.
+
+## server_manage.py
+
+Start and stop a background Python HTTP server.
+
+<CodeGroup>
+```bash Start Server
+uv run https://tools.simonwillison.net/python/server_manage.py \
+  start /path/to/directory \
+  --port 8000
+```
+
+```bash Stop Server
+uv run https://tools.simonwillison.net/python/server_manage.py \
+  stop
+```
+</CodeGroup>
+
+The server runs in the background and stores its PID in `server.pid`. Use the `stop` command to shut it down cleanly.
+
+## extract_issues.py
+
+Extract GitHub issues referenced in commits between two versions.
+
+<CodeGroup>
+```bash From Tag to HEAD
+cd datasette
+uv run https://tools.simonwillison.net/python/extract_issues.py 1.0a19
+```
+
+```bash Between Tags
+cd datasette
+uv run https://tools.simonwillison.net/python/extract_issues.py 1.0a19..1.0a20
+```
+</CodeGroup>
+
+Output format:
+```
+#123, #124, #125
+```
+
+Useful for generating changelog entries with linked issues.

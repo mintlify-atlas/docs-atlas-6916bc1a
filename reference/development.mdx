@@ -1,0 +1,781 @@
+---
+title: Development Guide
+description: How to create and maintain tools in the collection
+---
+
+## Getting Started
+
+Creating a new tool in this collection is straightforward. Each tool is a self-contained HTML file following established patterns.
+
+### Prerequisites
+
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/simonw/tools.git
+    cd tools
+    ```
+  </Step>
+  
+  <Step title="Install Python dependencies">
+    ```bash
+    pip install -e .
+    playwright install
+    ```
+    
+    This installs:
+    - `pytest-playwright` - For browser testing
+    - `pytest-unused-port` - For test server fixtures
+    - `markdown` - For build scripts
+  </Step>
+  
+  <Step title="Start local server">
+    ```bash
+    python -m http.server 8000
+    ```
+    
+    Then open `http://localhost:8000/` to browse tools
+  </Step>
+</Steps>
+
+## Creating a New Tool
+
+### Step 1: Choose a Template Pattern
+
+Select the appropriate pattern based on your tool's complexity:
+
+<AccordionGroup>
+  <Accordion title="Simple Stateless Tool (Recommended for beginners)">
+    Use for basic text processing, URL manipulation, or format conversion.
+    
+    **Example:** `query-string-stripper.html:1`
+    
+    **Best for:**
+    - Text transformation tools
+    - URL utilities
+    - Simple calculators
+    - Format converters
+  </Accordion>
+  
+  <Accordion title="Tool with External API">
+    Use when fetching data from external services.
+    
+    **Example:** `github-issue.html`
+    
+    **Best for:**
+    - GitHub API integrations
+    - Data fetching tools
+    - API explorers
+  </Accordion>
+  
+  <Accordion title="Tool with File Input">
+    Use for processing uploaded files.
+    
+    **Example:** `ocr.html:22`
+    
+    **Best for:**
+    - Image processing
+    - PDF manipulation
+    - File format conversion
+  </Accordion>
+  
+  <Accordion title="Tool with WebAssembly">
+    Use for complex computation or running languages in the browser.
+    
+    **Example:** `sqlite-wasm.html`, `micropython.html`
+    
+    **Best for:**
+    - Database tools
+    - Programming language interpreters
+    - Heavy computation
+  </Accordion>
+</AccordionGroup>
+
+### Step 2: Create the HTML File
+
+Create `your-tool-name.html` following the standard structure:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Tool Name</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                         Helvetica, Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        h1 {
+            margin-top: 0;
+            font-size: 28px;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        button:hover {
+            background-color: #0056b3;
+        }
+        
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .error {
+            color: #e74c3c;
+            background: #fef5f5;
+            padding: 12px;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .error.visible {
+            display: block;
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Your Tool Name</h1>
+    <p>Brief description of what your tool does</p>
+    
+    <label for="input">Input:</label>
+    <input type="text" id="input" placeholder="Enter something...">
+    
+    <div id="error" class="error"></div>
+    
+    <div id="output" style="margin-top: 20px; display: none;">
+        <label for="result">Result:</label>
+        <input type="text" id="result" readonly>
+        <button id="copy-btn">Copy to clipboard</button>
+    </div>
+    
+    <script>
+        const input = document.getElementById('input');
+        const output = document.getElementById('output');
+        const result = document.getElementById('result');
+        const errorDiv = document.getElementById('error');
+        const copyBtn = document.getElementById('copy-btn');
+        
+        // Real-time processing
+        input.addEventListener('input', function() {
+            const value = input.value.trim();
+            
+            if (!value) {
+                output.style.display = 'none';
+                errorDiv.classList.remove('visible');
+                return;
+            }
+            
+            try {
+                // Your processing logic here
+                result.value = processInput(value);
+                output.style.display = 'block';
+                errorDiv.classList.remove('visible');
+            } catch (err) {
+                errorDiv.textContent = err.message;
+                errorDiv.classList.add('visible');
+                output.style.display = 'none';
+            }
+        });
+        
+        // Copy to clipboard
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(result.value).then(() => {
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = 'Copied!';
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                }, 2000);
+            });
+        });
+        
+        // Your main logic
+        function processInput(value) {
+            // Implement your tool's functionality
+            return value.toUpperCase(); // Example
+        }
+    </script>
+</body>
+</html>
+```
+
+### Step 3: Create Documentation
+
+Create `your-tool-name.docs.md` with a brief description:
+
+```markdown
+This utility does X, Y, and Z. Enter your input and the tool instantly displays 
+the result. You can copy the output to your clipboard with the dedicated button.
+```
+
+<Note>
+Keep descriptions concise (2-3 sentences). The build system will automatically append commit metadata.
+</Note>
+
+### Step 4: Test Locally
+
+Open your tool in a browser:
+
+```bash
+# If you haven't started a server yet:
+python -m http.server 8000
+
+# Then open:
+http://localhost:8000/your-tool-name.html
+```
+
+Test thoroughly:
+- ✅ Try various inputs including edge cases
+- ✅ Test on mobile viewport (DevTools responsive mode)
+- ✅ Verify clipboard functionality works
+- ✅ Check error handling
+- ✅ Test keyboard navigation
+
+## Development Patterns
+
+### Real-Time Processing
+
+For instant feedback as users type:
+
+```javascript
+input.addEventListener('input', function() {
+    // Process immediately
+    output.value = transform(input.value);
+});
+```
+
+### Debounced Processing
+
+For expensive operations:
+
+```javascript
+let debounceTimer;
+input.addEventListener('input', function() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        // Process after 300ms of no typing
+        output.value = expensiveTransform(input.value);
+    }, 300);
+});
+```
+
+### Async API Calls
+
+For fetching external data:
+
+```javascript
+async function fetchData(id) {
+    button.disabled = true;
+    button.textContent = 'Loading...';
+    errorDiv.classList.remove('visible');
+    
+    try {
+        const response = await fetch(`https://api.example.com/data/${id}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        displayResult(data);
+    } catch (err) {
+        errorDiv.textContent = `Error: ${err.message}`;
+        errorDiv.classList.add('visible');
+    } finally {
+        button.disabled = false;
+        button.textContent = 'Fetch Data';
+    }
+}
+```
+
+### File Input Handling
+
+For processing uploaded files:
+
+```javascript
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+
+// Click to open file picker
+dropzone.addEventListener('click', () => fileInput.click());
+
+// Handle drag and drop
+dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('drag-over');
+});
+
+dropzone.addEventListener('dragleave', () => {
+    dropzone.classList.remove('drag-over');
+});
+
+dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('drag-over');
+    handleFiles(e.dataTransfer.files);
+});
+
+// Handle file input change
+fileInput.addEventListener('change', (e) => {
+    handleFiles(e.target.files);
+});
+
+function handleFiles(files) {
+    if (files.length === 0) return;
+    
+    const file = files[0];
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+        processFileContent(e.target.result);
+    };
+    
+    reader.readAsText(file); // or readAsDataURL, readAsArrayBuffer
+}
+```
+
+### URL Hash Parameters
+
+For loading data from URL:
+
+```javascript
+function loadFromHash() {
+    const hash = window.location.hash.slice(1);
+    if (!hash) return;
+    
+    // Parse hash parameters
+    const params = new URLSearchParams(hash);
+    const gistId = params.get('gist');
+    
+    if (gistId) {
+        loadGist(gistId);
+    }
+}
+
+// Load on page load
+loadFromHash();
+
+// Update when hash changes
+window.addEventListener('hashchange', loadFromHash);
+```
+
+### Loading External Libraries
+
+When you need external libraries:
+
+```html
+<!-- For non-module scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.2/marked.min.js"></script>
+
+<!-- For ES modules -->
+<script type="module">
+    import pdfjsDist from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.2.67/+esm';
+    
+    // Your code using the library
+</script>
+```
+
+## Styling Guidelines
+
+### Typography
+
+Use system fonts for performance:
+
+```css
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+             Helvetica, Arial, sans-serif;
+```
+
+### Colors
+
+Common color palette:
+
+```css
+/* Primary blue */
+#007bff, #0056b3, #004085
+
+/* Error red */
+#e74c3c, #fef5f5
+
+/* Neutral grays */
+#333, #666, #ccc, #f0f0f0, #f8f9fa
+```
+
+### Responsive Design
+
+Always include mobile breakpoint:
+
+```css
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+    }
+    h1 {
+        font-size: 24px;
+    }
+}
+```
+
+### CSS Layout Patterns
+
+For two-column layouts:
+
+```css
+.container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+@media (min-width: 768px) {
+    .container {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+```
+
+## Common UI Patterns
+
+### Tabs
+
+For multi-mode tools:
+
+```html
+<div class="tabs">
+    <button class="tab active" data-tab="paste">Paste Code</button>
+    <button class="tab" data-tab="github">GitHub Repo</button>
+</div>
+
+<div class="tab-content" id="paste-content">
+    <!-- Paste mode UI -->
+</div>
+
+<div class="tab-content" id="github-content" style="display: none;">
+    <!-- GitHub mode UI -->
+</div>
+
+<script>
+const tabs = document.querySelectorAll('.tab');
+const contents = document.querySelectorAll('.tab-content');
+
+tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+        // Remove active from all tabs
+        tabs.forEach(t => t.classList.remove('active'));
+        
+        // Add active to clicked tab
+        tab.classList.add('active');
+        
+        // Show corresponding content
+        const tabName = tab.dataset.tab;
+        contents.forEach(content => {
+            content.style.display = content.id === `${tabName}-content` ? 'block' : 'none';
+        });
+    });
+});
+</script>
+```
+
+### Progress Indicators
+
+For long-running operations:
+
+```html
+<div class="progress-container" style="display: none;">
+    <div class="progress-bar">
+        <div class="progress-fill" id="progress"></div>
+    </div>
+    <div id="progress-text">Processing...</div>
+</div>
+
+<style>
+.progress-bar {
+    width: 100%;
+    height: 20px;
+    background: #f0f0f0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #007bff;
+    transition: width 0.3s;
+    width: 0%;
+}
+</style>
+
+<script>
+function updateProgress(percent) {
+    document.getElementById('progress').style.width = `${percent}%`;
+    document.getElementById('progress-text').textContent = `Processing... ${percent}%`;
+}
+</script>
+```
+
+### Copy Button with Visual Feedback
+
+Standard pattern:
+
+```javascript
+copyButton.addEventListener('click', async () => {
+    try {
+        await navigator.clipboard.writeText(textToCopy.value);
+        const originalText = copyButton.textContent;
+        copyButton.textContent = '✓ Copied!';
+        copyButton.classList.add('success');
+        
+        setTimeout(() => {
+            copyButton.textContent = originalText;
+            copyButton.classList.remove('success');
+        }, 2000);
+    } catch (err) {
+        // Fallback for older browsers
+        textToCopy.select();
+        document.execCommand('copy');
+    }
+});
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Keep it Simple" icon="lightbulb">
+    Each tool should do one thing well. If a tool becomes too complex, consider splitting it into multiple tools.
+  </Card>
+  
+  <Card title="Mobile First" icon="mobile">
+    Test on mobile viewports early. Most users will access tools on various devices.
+  </Card>
+  
+  <Card title="Progressive Enhancement" icon="layer-group">
+    Start with basic functionality, then add enhancements. Ensure core features work even with JavaScript disabled when possible.
+  </Card>
+  
+  <Card title="Error Handling" icon="triangle-exclamation">
+    Always handle errors gracefully with clear messages. Never let exceptions crash the tool silently.
+  </Card>
+  
+  <Card title="Accessibility" icon="universal-access">
+    Use semantic HTML, proper labels, and keyboard navigation. Test with screen readers when possible.
+  </Card>
+  
+  <Card title="Performance" icon="gauge-high">
+    Keep tools fast. Use debouncing for expensive operations. Load large libraries only when needed.
+  </Card>
+</CardGroup>
+
+## Testing Your Tool
+
+Before submitting:
+
+<Tabs>
+  <Tab title="Manual Testing">
+    **Test these scenarios:**
+    
+    - ✅ Empty input
+    - ✅ Invalid input
+    - ✅ Very long input
+    - ✅ Special characters
+    - ✅ Mobile viewport (320px width)
+    - ✅ Tablet viewport (768px width)
+    - ✅ Desktop viewport (1920px width)
+    - ✅ Keyboard navigation (Tab, Enter, Escape)
+    - ✅ Copy to clipboard functionality
+    - ✅ Browser back/forward buttons
+  </Tab>
+  
+  <Tab title="Automated Testing">
+    See the [Testing Guide](/reference/testing) for writing Playwright tests.
+  </Tab>
+</Tabs>
+
+## Adding to the Collection
+
+<Steps>
+  <Step title="Add tool to README.md">
+    Add an entry under the appropriate category:
+    
+    ```markdown
+    ## Category Name
+    - [Your Tool Name](https://tools.simonwillison.net/your-tool-name) brief description
+    ```
+  </Step>
+  
+  <Step title="Run the build">
+    ```bash
+    ./build.sh
+    ```
+    
+    This will:
+    - Generate `tools.json` with metadata
+    - Update `index.html`
+    - Update `colophon.html`
+    - Update `by-month.html`
+  </Step>
+  
+  <Step title="Test the build">
+    ```bash
+    python -m http.server 8000
+    ```
+    
+    Verify:
+    - Your tool appears on the homepage
+    - The tool link works
+    - The description is correct
+  </Step>
+  
+  <Step title="Commit and push">
+    ```bash
+    git add your-tool-name.html your-tool-name.docs.md README.md
+    git commit -m "Add your-tool-name tool
+    
+    https://tools.simonwillison.net/your-tool-name
+    
+    Optional: Link to LLM transcript if you used AI assistance"
+    git push
+    ```
+  </Step>
+</Steps>
+
+## AI-Assisted Development
+
+Most tools in this collection are built with LLM assistance. Here are effective patterns:
+
+### Using Claude or ChatGPT
+
+**Effective prompt structure:**
+
+```
+Create a browser-based tool as a single HTML file that [does X].
+
+Requirements:
+- Single self-contained HTML file
+- Embedded CSS and JavaScript
+- Mobile responsive (max-width: 800px, breakpoint at 600px)
+- Real-time processing as user types
+- Copy to clipboard button
+- Error handling with visible error messages
+- Use system fonts
+- Follow this color scheme: primary #007bff, error #e74c3c
+
+The tool should:
+1. [Specific requirement]
+2. [Specific requirement]
+3. [Specific requirement]
+
+Style it similar to other tools at tools.simonwillison.net
+```
+
+### Iterative Development
+
+<Steps>
+  <Step title="Start with core functionality">
+    Get the basic processing logic working first
+  </Step>
+  
+  <Step title="Add UI polish">
+    Ask the LLM to improve styling and responsiveness
+  </Step>
+  
+  <Step title="Add features incrementally">
+    Request one feature at a time: drag-and-drop, URL parameters, etc.
+  </Step>
+  
+  <Step title="Test and refine">
+    Test thoroughly and ask the LLM to fix specific issues
+  </Step>
+</Steps>
+
+### Document the Process
+
+Include LLM transcript links in commit messages:
+
+```bash
+git commit -m "Add cool-new-tool
+
+https://tools.simonwillison.net/cool-new-tool
+
+Built with Claude: https://gist.github.com/..."
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Tool doesn't appear on homepage">
+    1. Verify the tool is added to `README.md`
+    2. Run `./build.sh`
+    3. Check that `tools.json` includes your tool
+    4. Ensure the HTML file is in the root directory (not in a subdirectory)
+  </Accordion>
+  
+  <Accordion title="Clipboard functionality doesn't work">
+    1. Ensure you're testing over HTTPS or localhost (clipboard API requires secure context)
+    2. Check browser console for errors
+    3. Add fallback using `document.execCommand('copy')` for older browsers
+  </Accordion>
+  
+  <Accordion title="External library not loading">
+    1. Check browser console for CORS errors
+    2. Verify the CDN URL is correct
+    3. Try a different CDN (jsdelivr, cdnjs, unpkg)
+    4. Check if the library requires specific initialization
+  </Accordion>
+  
+  <Accordion title="Mobile layout is broken">
+    1. Verify `<meta name="viewport">` tag is present
+    2. Check that `max-width` is set on body or container
+    3. Test with browser DevTools responsive mode
+    4. Ensure `@media (max-width: 600px)` breakpoint is defined
+  </Accordion>
+</AccordionGroup>
+
+## Resources
+
+- **MDN Web Docs** - [developer.mozilla.org](https://developer.mozilla.org)
+- **Can I Use** - [caniuse.com](https://caniuse.com) - Browser compatibility
+- **CDNJS** - [cdnjs.com](https://cdnjs.com) - CDN for libraries
+- **jsDelivr** - [jsdelivr.com](https://www.jsdelivr.com) - Alternative CDN
+
+## Next Steps
+
+- Read the [Testing Guide](/reference/testing) to learn about writing tests
+- Explore the [Architecture](/reference/architecture) to understand the full system
+- Browse existing tools on [tools.simonwillison.net](https://tools.simonwillison.net) for inspiration

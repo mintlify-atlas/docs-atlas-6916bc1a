@@ -1,0 +1,127 @@
+---
+title: "LLM Playground Tools"
+description: "Interactive playgrounds and utilities for Claude, Gemini, OpenAI, and other LLM APIs"
+icon: "robot"
+---
+
+Experiment with large language model APIs directly in your browser. These tools provide interfaces for testing prompts, analyzing responses, and exploring model capabilities with Claude, Gemini, OpenAI, and Chrome's built-in AI.
+
+## Claude Tools
+
+<CardGroup cols={2}>
+  <Card
+    title="Haiku"
+    icon="camera"
+    href="https://tools.simonwillison.net/haiku"
+  >
+    Generate haikus using Claude Haiku and your device camera
+  </Card>
+  
+  <Card
+    title="Claude Token Counter"
+    icon="calculator"
+    href="https://tools.simonwillison.net/claude-token-counter"
+  >
+    Count tokens in prompts to estimate Claude API usage and costs
+  </Card>
+</CardGroup>
+
+<Note>
+  The Haiku tool captures images from your camera and uses Claude's vision capabilities to compose original haiku poetry based on what it sees.
+</Note>
+
+## Gemini Playgrounds
+
+<CardGroup cols={2}>
+  <Card
+    title="Gemini Chat Client"
+    icon="comments"
+    href="https://tools.simonwillison.net/gemini-chat"
+  >
+    Simple chat interface for the Google Gemini API
+  </Card>
+  
+  <Card
+    title="Gemini Bounding Box Visualizer"
+    icon="draw-square"
+    href="https://tools.simonwillison.net/gemini-bbox"
+  >
+    Visualize object detection bounding boxes returned by Gemini
+  </Card>
+  
+  <Card
+    title="Gemini Mask Visualizer"
+    icon="masks-theater"
+    href="https://tools.simonwillison.net/gemini-mask"
+  >
+    Overlay segmentation masks from Gemini on uploaded images
+  </Card>
+  
+  <Card
+    title="Gemini Image JSON Renderer"
+    icon="image"
+    href="https://tools.simonwillison.net/gemini-image-json"
+  >
+    Display and parse images from Gemini JSON response output
+  </Card>
+</CardGroup>
+
+## OpenAI Tools
+
+<CardGroup cols={2}>
+  <Card
+    title="OpenAI Audio Input"
+    icon="microphone"
+    href="https://tools.simonwillison.net/openai-audio"
+  >
+    Record audio and send it to OpenAI models for transcription
+  </Card>
+  
+  <Card
+    title="OpenAI Audio Output"
+    icon="volume-high"
+    href="https://tools.simonwillison.net/openai-audio-output"
+  >
+    Generate speech using OpenAI's text-to-speech voices
+  </Card>
+  
+  <Card
+    title="OpenAI WebRTC Demo"
+    icon="phone"
+    href="https://tools.simonwillison.net/openai-webrtc"
+  >
+    Interact with OpenAI's real-time audio API via WebRTC
+  </Card>
+  
+  <Card
+    title="GPT-4o Audio Player"
+    icon="circle-play"
+    href="https://tools.simonwillison.net/gpt-4o-audio-player"
+  >
+    Play audio responses stored as JSON on GitHub Gist
+  </Card>
+</CardGroup>
+
+## Chrome AI
+
+<Card
+  title="Chrome Prompt Playground"
+  icon="chrome"
+  href="https://tools.simonwillison.net/chrome-prompt-playground"
+>
+  Run prompts on Chrome's built-in Gemini Nano model (requires Chrome Canary with experimental features enabled)
+</Card>
+
+## Schema and JSON Tools
+
+<Card
+  title="JSON Schema Builder"
+  icon="diagram-project"
+  href="https://tools.simonwillison.net/json-schema-builder"
+>
+  Build JSON schemas with a visual editor for structured LLM outputs
+</Card>
+
+<Tip>
+  All LLM playground tools store your API keys locally in browser storage. Keys are never transmitted to any server except the official API endpoints.
+</Tip>

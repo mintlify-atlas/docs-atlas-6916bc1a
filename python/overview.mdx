@@ -1,0 +1,69 @@
+---
+title: Python Scripts Overview
+description: Run Python scripts directly from URLs using uv run
+---
+
+Simon Willison's Tools includes 28+ Python scripts that can be run directly from their URLs using `uv run`, without any installation required.
+
+## How to Run Scripts
+
+All scripts can be executed using the `uv run` command followed by the script's URL:
+
+```bash
+uv run https://tools.simonwillison.net/python/script_name.py [arguments]
+```
+
+The `uv` tool will automatically:
+- Download the script
+- Parse its dependencies from the inline script metadata
+- Create an isolated environment
+- Install required packages
+- Execute the script
+
+## Getting Help
+
+Most scripts support the `--help` flag to see all available options:
+
+```bash
+uv run https://tools.simonwillison.net/python/script_name.py --help
+```
+
+## Script Categories
+
+The scripts are organized into three main categories:
+
+### LLM Tools
+
+Scripts for working with Large Language Models, including tools for OpenAI, Anthropic Claude, and other AI services.
+
+[View LLM Tools →](/python/llm-tools)
+
+### File Processors
+
+Utilities for processing, extracting, and analyzing various file formats including GGUF, JSON, PDFs, images, and more.
+
+[View File Processors →](/python/file-processors)
+
+### Cloud Utilities
+
+Tools for managing and debugging cloud services, particularly AWS S3 and Google Cloud Platform.
+
+[View Cloud Utilities →](/python/cloud-utils)
+
+## Source Code
+
+All scripts are open source and available on GitHub:
+
+[github.com/simonw/tools/tree/main/python](https://github.com/simonw/tools/tree/main/python)
+
+## Requirements
+
+You need [uv](https://docs.astral.sh/uv/) installed to run these scripts. Install it with:
+
+```bash
+# macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+```

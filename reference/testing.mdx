@@ -1,0 +1,867 @@
+---
+title: Testing Guide
+description: How to write and run tests for tools using Playwright and pytest
+---
+
+## Overview
+
+The tools collection uses **Playwright** for browser automation testing with **pytest** as the test runner. This combination provides reliable, fast end-to-end testing of tools in real browsers.
+
+<Note>
+Tests run automatically on every push via GitHub Actions. All tests must pass before merging.
+</Note>
+
+## Test Infrastructure
+
+### Dependencies
+
+From `pyproject.toml:7`:
+
+```toml
+[project]
+dependencies = [
+    "pytest-playwright",
+    "pytest-unused-port"
+]
+```
+
+### Installation
+
+<Steps>
+  <Step title="Install Python dependencies">
+    ```bash
+    pip install -e .
+    ```
+  </Step>
+  
+  <Step title="Install Playwright browsers">
+    ```bash
+    playwright install
+    ```
+    
+    This downloads Chromium, Firefox, and WebKit browsers.
+  </Step>
+  
+  <Step title="Verify installation">
+    ```bash
+    pytest --version
+    playwright --version
+    ```
+  </Step>
+</Steps>
+
+## Test Structure
+
+### Test Directory Layout
+
+```
+tests/
+├── conftest.py              # Shared fixtures and configuration
+├── test_ocr.py             # Tests for ocr.html
+├── test_sloccount.py       # Tests for sloccount.html
+├── test_quickjs.py         # Tests for quickjs.html
+├── ocr-test-text.png       # Test fixture image
+├── three_page_pdf.pdf      # Test fixture PDF
+└── requirements.txt        # Additional test dependencies
+```
+
+### Shared Fixtures
+
+The `tests/conftest.py:75` file provides reusable test fixtures:
+
+```python
+import socket
+import subprocess
+import sys
+import time
+import pytest
+
+
+class StaticServer:
+    """Manages a static file HTTP server with proper startup waiting."""
+
+    def __init__(self, port):
+        self.port = port
+        self._process = None
+
+    def start(self, directory='.'):
+        """Start an HTTP server serving the specified directory."""
+        self._process = subprocess.Popen(
+            [sys.executable, '-m', 'http.server', str(self.port), 
+             '--directory', str(directory)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        
+        # Wait for server to be ready (up to 5 seconds)
+        import urllib.request
+        for _ in range(50):
+            time.sleep(0.1)
+            try:
+                urllib.request.urlopen(f'http://127.0.0.1:{self.port}/', timeout=1)
+                return self
+            except (urllib.error.URLError, ConnectionRefusedError):
+                continue
+        
+        raise RuntimeError("Server did not become ready in time")
+
+    def stop(self):
+        """Stop the HTTP server if it's running."""
+        if self._process is not None:
+            self._process.terminate()
+            self._process.wait(timeout=5)
+
+
+@pytest.fixture
+def unused_port():
+    """Returns an unused port number on localhost."""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        sock.bind(('127.0.0.1', 0))
+        port = sock.getsockname()[1]
+        return port
+    finally:
+        sock.close()
+
+
+@pytest.fixture
+def unused_port_server(unused_port):
+    """
+    Returns a StaticServer instance that can start an HTTP server on an unused port.
+    The server automatically stops at the end of the test function.
+    """
+    server = StaticServer(unused_port)
+    yield server
+    server.stop()
+```
+
+## Writing Tests
+
+### Basic Test Structure
+
+From `tests/test_ocr.py:9`:
+
+```python
+import pathlib
+from playwright.sync_api import Page, expect
+
+test_dir = pathlib.Path(__file__).parent.absolute()
+root = test_dir.parent.absolute()
+
+
+def test_initial_state(page: Page, unused_port_server):
+    """Test that the page loads with correct initial state."""
+    # Start the server
+    unused_port_server.start(root)
+    
+    # Navigate to the tool
+    page.goto(f"http://127.0.0.1:{unused_port_server.port}/ocr.html")
+    
+    # Assert initial state
+    expect(page.locator("h1")).to_have_text(
+        "OCR PDFs and images directly in your browser"
+    )
+    expect(page.locator("#dropzone")).to_have_text(
+        "Drag and drop a PDF, JPG, PNG, or GIF file here or click to select a file"
+    )
+    expect(page.locator("#fullDocumentSection")).not_to_be_visible()
+```
+
+### Test Fixtures and Setup
+
+From `tests/test_sloccount.py:15`:
+
+```python
+@pytest.fixture(scope="session")
+def browser_context_args(browser_context_args):
+    """Configure browser context for testing."""
+    return {
+        **browser_context_args,
+        "viewport": {"width": 1280, "height": 720},
+    }
+```
+
+## Common Test Patterns
+
+### Testing Page Load
+
+```python
+def test_page_loads(page: Page, unused_port_server):
+    """Test that the page loads successfully."""
+    unused_port_server.start(root)
+    page.goto(f"http://localhost:{unused_port_server.port}/your-tool.html")
+
+    # Check title
+    expect(page).to_have_title("Your Tool Name")
+
+    # Check main heading
+    expect(page.locator("h1")).to_have_text("Your Tool Name")
+```
+
+### Testing User Input
+
+```python
+def test_text_input(page: Page, unused_port_server):
+    """Test text input processing."""
+    unused_port_server.start(root)
+    page.goto(f"http://localhost:{unused_port_server.port}/your-tool.html")
+
+    # Fill input field
+    page.locator("#input").fill("test input")
+
+    # Verify output
+    expect(page.locator("#output")).to_have_value("expected output")
+```
+
+### Testing Button Clicks
+
+```python
+def test_button_click(page: Page, unused_port_server):
+    """Test button functionality."""
+    unused_port_server.start(root)
+    page.goto(f"http://localhost:{unused_port_server.port}/your-tool.html")
+
+    # Click button
+    page.locator("#analyze-btn").click()
+
+    # Verify result
+    expect(page.locator("#result")).to_be_visible()
+```
+
+### Testing File Upload
+
+From `tests/test_ocr.py:22`:
+
+```python
+def test_file_upload(page: Page, unused_port_server):
+    """Test file upload functionality."""
+    unused_port_server.start(root)
+    page.goto(f"http://localhost:{unused_port_server.port}/ocr.html")
+    
+    # Upload file
+    file_input = page.locator("#fileInput")
+    file_input.set_input_files(str(test_dir / "ocr-test-text.png"))
+    
+    # Verify file was processed
+    expect(page.locator(".image-container img")).to_be_visible()
+    expect(page.locator(".textarea-alt")).to_have_value("OCR test text")
+```
+
+### Testing Tab Switching
+
+From `tests/test_sloccount.py:37`:
+
+```python
+def test_tab_switching(page: Page, unused_port_server):
+    """Test that tab switching works correctly."""
+    unused_port_server.start(root)
+    page.goto(f"http://localhost:{unused_port_server.port}/sloccount.html")
+
+    # Initially, paste tab should be active
+    paste_tab = page.locator('[data-tab="paste"]')
+    github_tab = page.locator('[data-tab="github"]')
+
+    expect(paste_tab).to_have_class("tab active")
+    expect(github_tab).not_to_have_class("tab active")
+
+    # Click GitHub tab
+    github_tab.click()
+
+    expect(github_tab).to_have_class("tab active")
+    expect(paste_tab).not_to_have_class("tab active")
+```
+
+### Testing Error Messages
+
+From `tests/test_sloccount.py:76`:
+
+```python
+def test_validation_error(page: Page, unused_port_server):
+    """Test validation for empty input."""
+    unused_port_server.start(root)
+    page.goto(f"http://localhost:{unused_port_server.port}/your-tool.html")
+
+    # Wait for initialization
+    analyze_btn = page.locator("#analyze-btn")
+    expect(analyze_btn).to_have_text("Analyze", timeout=30000)
+
+    # Try to analyze without input
+    analyze_btn.click()
+
+    # Verify error message
+    status = page.locator("#status")
+    expect(status).to_have_class("visible error")
+    expect(status).to_contain_text("Please provide input")
+```
+
+### Testing Async Operations
+
+```python
+def test_async_processing(page: Page, unused_port_server):
+    """Test tool that requires async initialization."""
+    unused_port_server.start(root)
+    page.goto(f"http://localhost:{unused_port_server.port}/your-tool.html")
+
+    # Wait for initialization message to disappear
+    button = page.locator("#process-btn")
+    expect(button).not_to_have_text("Initializing...", timeout=30000)
+    expect(button).to_have_text("Process")
+    
+    # Now test the functionality
+    page.locator("#input").fill("test data")
+    button.click()
+    
+    # Wait for result
+    expect(page.locator("#result")).to_be_visible(timeout=10000)
+```
+
+### Testing Clipboard Functionality
+
+```python
+def test_copy_to_clipboard(page: Page, unused_port_server):
+    """Test copy to clipboard button."""
+    unused_port_server.start(root)
+    page.goto(f"http://localhost:{unused_port_server.port}/your-tool.html")
+    
+    # Generate some output
+    page.locator("#input").fill("test")
+    
+    # Click copy button
+    copy_btn = page.locator("#copy-btn")
+    copy_btn.click()
+    
+    # Verify button feedback
+    expect(copy_btn).to_have_text("Copied!")
+    
+    # Wait for button to reset
+    expect(copy_btn).to_have_text("Copy to clipboard", timeout=3000)
+```
+
+## Playwright API Reference
+
+### Common Locators
+
+```python
+# By ID
+page.locator("#element-id")
+
+# By class
+page.locator(".class-name")
+
+# By tag
+page.locator("button")
+
+# By text
+page.locator("text=Click me")
+
+# By attribute
+page.locator('[data-tab="paste"]')
+
+# Combined selectors
+page.locator("button.primary#submit")
+
+# Nth element
+page.locator(".item").nth(0)
+page.locator(".item").first
+page.locator(".item").last
+```
+
+### Common Assertions
+
+```python
+from playwright.sync_api import expect
+
+# Text content
+expect(page.locator("h1")).to_have_text("Expected Text")
+expect(page.locator("p")).to_contain_text("partial")
+
+# Visibility
+expect(page.locator("#element")).to_be_visible()
+expect(page.locator("#element")).not_to_be_visible()
+
+# Values
+expect(page.locator("input")).to_have_value("expected value")
+expect(page.locator("select")).to_have_value("option1")
+
+# Attributes
+expect(page.locator("img")).to_have_attribute("src", "image.png")
+expect(page.locator("a")).to_have_attribute("href", "https://example.com")
+
+# Classes
+expect(page.locator("button")).to_have_class("active")
+expect(page.locator("button")).to_have_class("btn active")
+
+# Count
+expect(page.locator(".item")).to_have_count(3)
+
+# Disabled state
+expect(page.locator("button")).to_be_disabled()
+expect(page.locator("button")).to_be_enabled()
+
+# Page title
+expect(page).to_have_title("Page Title")
+```
+
+### Common Actions
+
+```python
+# Click
+page.locator("button").click()
+
+# Fill input
+page.locator("#input").fill("text")
+
+# Clear input
+page.locator("#input").clear()
+
+# Type (with delays between keystrokes)
+page.locator("#input").type("text", delay=100)
+
+# Press keys
+page.locator("#input").press("Enter")
+page.locator("#input").press("Escape")
+
+# Select dropdown
+page.locator("select").select_option("option-value")
+
+# Check/uncheck
+page.locator("#checkbox").check()
+page.locator("#checkbox").uncheck()
+
+# Upload file
+page.locator("#file-input").set_input_files("/path/to/file.txt")
+
+# Multiple files
+page.locator("#file-input").set_input_files(["/path/to/file1.txt", "/path/to/file2.txt"])
+```
+
+### Waiting
+
+```python
+# Wait for element
+page.wait_for_selector("#element")
+
+# Wait for load state
+page.wait_for_load_state("networkidle")
+
+# Wait for timeout
+page.wait_for_timeout(1000)  # milliseconds
+
+# Wait for function
+page.wait_for_function("() => document.querySelector('#element') !== null")
+
+# Custom timeout in assertions
+expect(page.locator("#element")).to_be_visible(timeout=10000)
+```
+
+## Running Tests
+
+### Run All Tests
+
+```bash
+pytest
+```
+
+### Run Specific Test File
+
+```bash
+pytest tests/test_ocr.py
+```
+
+### Run Specific Test Function
+
+```bash
+pytest tests/test_ocr.py::test_initial_state
+```
+
+### Run with Verbose Output
+
+```bash
+pytest -v
+```
+
+### Run with Output from Print Statements
+
+```bash
+pytest -s
+```
+
+### Run in Headed Mode (See Browser)
+
+```bash
+pytest --headed
+```
+
+### Run in Specific Browser
+
+```bash
+# Chromium (default)
+pytest --browser chromium
+
+# Firefox
+pytest --browser firefox
+
+# WebKit (Safari)
+pytest --browser webkit
+```
+
+### Run with Debugging
+
+```bash
+# Stop on first failure
+pytest -x
+
+# Drop into debugger on failure
+pytest --pdb
+
+# Slow down execution
+pytest --slowmo 1000  # 1 second delay between actions
+```
+
+### Run Tests Matching Pattern
+
+```bash
+# Run tests matching "upload"
+pytest -k upload
+
+# Run tests NOT matching "slow"
+pytest -k "not slow"
+```
+
+## CI/CD Integration
+
+Tests run automatically via GitHub Actions in `.github/workflows/test.yml`:
+
+```yaml
+name: Test
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        cache: 'pip'
+        cache-dependency-path: 'pyproject.toml'
+    
+    - name: Cache Playwright browsers
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright/
+        key: ${{ runner.os }}-browsers
+    
+    - name: Install dependencies
+      run: |
+        pip install -e .
+        playwright install
+    
+    - name: Run tests
+      run: pytest
+```
+
+## Creating Tests for Your Tool
+
+<Steps>
+  <Step title="Create test file">
+    Create `tests/test_your-tool.py`:
+    
+    ```python
+    import pathlib
+    from playwright.sync_api import Page, expect
+    
+    test_dir = pathlib.Path(__file__).parent.absolute()
+    root = test_dir.parent.absolute()
+    ```
+  </Step>
+  
+  <Step title="Test initial page load">
+    ```python
+    def test_page_loads(page: Page, unused_port_server):
+        unused_port_server.start(root)
+        page.goto(f"http://localhost:{unused_port_server.port}/your-tool.html")
+        expect(page).to_have_title("Your Tool Name")
+        expect(page.locator("h1")).to_have_text("Your Tool Name")
+    ```
+  </Step>
+  
+  <Step title="Test core functionality">
+    ```python
+    def test_core_feature(page: Page, unused_port_server):
+        unused_port_server.start(root)
+        page.goto(f"http://localhost:{unused_port_server.port}/your-tool.html")
+        
+        # Test your tool's main feature
+        page.locator("#input").fill("test input")
+        expect(page.locator("#output")).to_have_value("expected output")
+    ```
+  </Step>
+  
+  <Step title="Test error cases">
+    ```python
+    def test_error_handling(page: Page, unused_port_server):
+        unused_port_server.start(root)
+        page.goto(f"http://localhost:{unused_port_server.port}/your-tool.html")
+        
+        # Test with invalid input
+        page.locator("#input").fill("invalid")
+        expect(page.locator("#error")).to_be_visible()
+        expect(page.locator("#error")).to_contain_text("Invalid input")
+    ```
+  </Step>
+  
+  <Step title="Run your tests">
+    ```bash
+    pytest tests/test_your-tool.py -v
+    ```
+  </Step>
+</Steps>
+
+## Test Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Test User Flows" icon="route">
+    Test complete user journeys, not just individual functions. How would a real user interact with your tool?
+  </Card>
+  
+  <Card title="Test Edge Cases" icon="triangle-exclamation">
+    Empty inputs, very long inputs, special characters, invalid data. Don't just test the happy path.
+  </Card>
+  
+  <Card title="Use Descriptive Names" icon="tag">
+    Test names should clearly describe what they're testing: `test_empty_input_shows_error` not `test_error`
+  </Card>
+  
+  <Card title="Keep Tests Independent" icon="cube">
+    Each test should be able to run independently. Don't rely on test execution order.
+  </Card>
+  
+  <Card title="Handle Async" icon="clock">
+    Use appropriate timeouts for async operations. Don't make tests flaky with hard-coded waits.
+  </Card>
+  
+  <Card title="Clean Up" icon="broom">
+    Use fixtures that clean up after themselves. The `unused_port_server` fixture stops the server automatically.
+  </Card>
+</CardGroup>
+
+## Debugging Tests
+
+### Visual Debugging
+
+Run tests in headed mode to see what's happening:
+
+```bash
+pytest --headed --slowmo 1000 tests/test_your-tool.py
+```
+
+### Screenshots on Failure
+
+Add to your test:
+
+```python
+def test_something(page: Page, unused_port_server):
+    try:
+        # Your test code
+        pass
+    except Exception:
+        page.screenshot(path="failure-screenshot.png")
+        raise
+```
+
+### Trace Recording
+
+Record a trace for debugging:
+
+```python
+def test_something(page: Page, unused_port_server, browser):
+    context = browser.new_context()
+    context.tracing.start(screenshots=True, snapshots=True)
+    
+    page = context.new_page()
+    # Your test code
+    
+    context.tracing.stop(path="trace.zip")
+```
+
+View trace:
+
+```bash
+playwright show-trace trace.zip
+```
+
+### Print Page Content
+
+Debug what's on the page:
+
+```python
+print(page.content())  # Full HTML
+print(page.locator("#element").text_content())  # Element text
+```
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="Test times out waiting for element">
+    **Causes:**
+    - Element never appears
+    - Selector is wrong
+    - Async initialization not complete
+    
+    **Solutions:**
+    ```python
+    # Increase timeout
+    expect(page.locator("#element")).to_be_visible(timeout=30000)
+    
+    # Wait for initialization first
+    page.wait_for_load_state("networkidle")
+    
+    # Check selector
+    print(page.content())  # See full HTML
+    ```
+  </Accordion>
+  
+  <Accordion title="Server fails to start">
+    **Causes:**
+    - Port already in use
+    - Python not in PATH
+    
+    **Solutions:**
+    ```python
+    # The unused_port fixture automatically finds an available port
+    # Make sure you're using it:
+    def test_something(page: Page, unused_port_server):
+        unused_port_server.start(root)
+        # Use unused_port_server.port, not a hardcoded port
+    ```
+  </Accordion>
+  
+  <Accordion title="Tests pass locally but fail in CI">
+    **Causes:**
+    - Timing differences
+    - Different browser versions
+    - Missing test fixtures
+    
+    **Solutions:**
+    - Use `expect()` assertions with timeouts instead of `wait_for_timeout()`
+    - Ensure test fixtures are committed to git
+    - Test with same browser version as CI
+  </Accordion>
+  
+  <Accordion title="Flaky tests (sometimes pass, sometimes fail)">
+    **Causes:**
+    - Race conditions
+    - Insufficient waits
+    - Hardcoded timeouts
+    
+    **Solutions:**
+    ```python
+    # Bad - hardcoded wait
+    page.wait_for_timeout(2000)
+    
+    # Good - wait for specific condition
+    expect(page.locator("#result")).to_be_visible()
+    
+    # Wait for network to be idle
+    page.wait_for_load_state("networkidle")
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Advanced Testing
+
+### Testing with Multiple Files
+
+```python
+def test_multiple_file_upload(page: Page, unused_port_server):
+    unused_port_server.start(root)
+    page.goto(f"http://localhost:{unused_port_server.port}/your-tool.html")
+    
+    # Upload multiple files
+    page.locator("#file-input").set_input_files([
+        str(test_dir / "file1.txt"),
+        str(test_dir / "file2.txt"),
+    ])
+    
+    # Verify both files processed
+    expect(page.locator(".file-result")).to_have_count(2)
+```
+
+### Testing Drag and Drop
+
+```python
+def test_drag_drop(page: Page, unused_port_server):
+    unused_port_server.start(root)
+    page.goto(f"http://localhost:{unused_port_server.port}/your-tool.html")
+    
+    # Create a file input event programmatically
+    page.evaluate("""
+        (filePath) => {
+            const dropzone = document.getElementById('dropzone');
+            const event = new DragEvent('drop', {
+                dataTransfer: new DataTransfer()
+            });
+            dropzone.dispatchEvent(event);
+        }
+    """, str(test_dir / "test-file.png"))
+```
+
+### Testing Keyboard Navigation
+
+```python
+def test_keyboard_navigation(page: Page, unused_port_server):
+    unused_port_server.start(root)
+    page.goto(f"http://localhost:{unused_port_server.port}/your-tool.html")
+    
+    # Tab to navigate
+    page.keyboard.press("Tab")
+    page.keyboard.press("Tab")
+    
+    # Enter to submit
+    page.keyboard.press("Enter")
+    
+    # Escape to close
+    page.keyboard.press("Escape")
+    
+    # Verify behavior
+    expect(page.locator("#modal")).not_to_be_visible()
+```
+
+### Parameterized Tests
+
+```python
+import pytest
+
+@pytest.mark.parametrize("input_text,expected_output", [
+    ("hello", "HELLO"),
+    ("world", "WORLD"),
+    ("123", "123"),
+    ("", ""),
+])
+def test_text_transformation(page: Page, unused_port_server, input_text, expected_output):
+    unused_port_server.start(root)
+    page.goto(f"http://localhost:{unused_port_server.port}/your-tool.html")
+    
+    page.locator("#input").fill(input_text)
+    expect(page.locator("#output")).to_have_value(expected_output)
+```
+
+## Resources
+
+- **Playwright Documentation** - [playwright.dev/python](https://playwright.dev/python/)
+- **Pytest Documentation** - [docs.pytest.org](https://docs.pytest.org)
+- **Playwright Selectors** - [playwright.dev/python/docs/selectors](https://playwright.dev/python/docs/selectors)
+- **Playwright Best Practices** - [playwright.dev/python/docs/best-practices](https://playwright.dev/python/docs/best-practices)
+
+## Next Steps
+
+- Read the [Development Guide](/reference/development) to learn about creating tools
+- Explore the [Architecture](/reference/architecture) to understand the system design
+- Browse existing tests in the `tests/` directory for more examples

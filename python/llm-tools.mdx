@@ -1,0 +1,237 @@
+---
+title: LLM Tools
+description: Python scripts for working with Large Language Models
+---
+
+Tools for interacting with OpenAI, Anthropic Claude, Google Gemini, and other LLM services.
+
+## claude_to_markdown.py
+
+Convert a Claude `.jsonl` conversation log to readable Markdown format.
+
+```bash
+uv run https://tools.simonwillison.net/python/claude_to_markdown.py \
+  aed89565-d168-4ff9-bb03-13ea532969ea.jsonl
+```
+
+By default, this creates a `.md` file next to the `.jsonl` file. You can specify a different output filename as a second argument:
+
+```bash
+uv run https://tools.simonwillison.net/python/claude_to_markdown.py \
+  conversation.jsonl output.md
+```
+
+[Example output](https://gist.github.com/simonw/388d62cdb99dd844eb6ce63b538dbbd8) from the session that created this script.
+
+## claude_code_to_gist.py
+
+Publish Claude Code conversations to GitHub Gists with a viewer interface.
+
+```bash
+uv run https://tools.simonwillison.net/python/claude_code_to_gist.py
+```
+
+This shows an interactive list where you can:
+1. Select a recent Claude Code conversation
+2. Publish it to a GitHub Gist (requires `gh` CLI tool)
+3. Get a URL to the [claude-code-timeline viewer](https://tools.simonwillison.net/claude-code-timeline)
+
+## codex_to_markdown.py
+
+Convert a Codex CLI session JSONL log into readable Markdown.
+
+```bash
+uv run https://tools.simonwillison.net/python/codex_to_markdown.py \
+  ~/.codex/sessions/2025/09/24/rollout-2025-09-24T15-33-49-01997ddc-88f4-7e40-8dac-d558f31dd3ca.jsonl
+```
+
+[Example output](https://gist.github.com/simonw/9745deeb0a318a0fc1cf9beb89fbec8a) showing the session that built this tool.
+
+## openai_image.py
+
+Generate images from text prompts using OpenAI's image models.
+
+<CodeGroup>
+```bash Basic Usage
+uv run https://tools.simonwillison.net/python/openai_image.py \
+  'A racoon eating cheese wearing an inappropriate hat'
+```
+
+```bash Specify Model
+uv run https://tools.simonwillison.net/python/openai_image.py \
+  'Your prompt here' \
+  --model gpt-image-1 \
+  --quality hd
+```
+
+```bash Custom Output
+uv run https://tools.simonwillison.net/python/openai_image.py \
+  'Your prompt here' \
+  output.png \
+  --size 1792x1024 \
+  --output-format png
+```
+</CodeGroup>
+
+### Options
+
+<ParamField path="PROMPT" type="string" required>
+  Text prompt describing the image to generate
+</ParamField>
+
+<ParamField path="OUTFILE" type="string">
+  Output file path (default: /tmp/image-XXXXXX.png)
+</ParamField>
+
+<ParamField path="--model" type="string" default="gpt-image-1-mini">
+  Model to use. Known models: dall-e-2, dall-e-3, gpt-image-1, gpt-image-1-mini
+</ParamField>
+
+<ParamField path="--background" type="string">
+  Background setting: transparent, opaque, or auto
+</ParamField>
+
+<ParamField path="--quality" type="string">
+  Quality setting: standard, hd, low, medium, high, or auto
+</ParamField>
+
+<ParamField path="--size" type="string">
+  Image size: auto, 1024x1024, 1536x1024, 1024x1536, 256x256, 512x512, 1792x1024, or 1024x1792
+</ParamField>
+
+<ParamField path="--output-format" type="string">
+  Output format: png, jpeg, or webp
+</ParamField>
+
+## openai_background_prompt.py
+
+Run prompts against OpenAI models using the background option, with polling for completion.
+
+```bash
+OPENAI_API_KEY=$(llm keys get openai) uv run https://tools.simonwillison.net/python/openai_background_prompt.py \
+  o4-mini-deep-research 'Describe a research task here'
+```
+
+Works with GPT-5 Pro and other models that support background execution.
+
+### Options
+
+- `--code-interpreter` - Enable the code interpreter tool
+- `--web-search` - Enable the web search tool
+
+## list_llm_model_ids.py
+
+List available model IDs from OpenAI, Anthropic, and Gemini.
+
+```bash
+uv run https://tools.simonwillison.net/python/list_llm_model_ids.py
+```
+
+**Requirements:**
+- [LLM](https://llm.datasette.io/) must be installed
+- API keys configured using `llm keys set` for one or more of: `anthropic`, `openai`, or `gemini`
+
+Example output:
+```
+===================
+openai (136 models)
+===================
+babbage-002
+chatgpt-4o-latest
+chatgpt-image-latest
+...
+```
+
+## streaming_textual_markdown.py
+
+Stream LLM prompt results with live Markdown rendering using Textual.
+
+```bash
+uv run https://tools.simonwillison.net/python/streaming_textual_markdown.py \
+  'Epic saga of a pelican and a wolf becoming friends over their love for welding'
+```
+
+This displays the LLM response in your terminal with formatted Markdown as it streams in.
+
+## mistral_ocr.py
+
+Run PDF files through the [Mistral OCR](https://mistral.ai/fr/news/mistral-ocr) API to extract text and images.
+
+<CodeGroup>
+```bash Markdown Output
+uv run https://tools.simonwillison.net/python/mistral_ocr.py \
+  my-file.pdf > output.md
+```
+
+```bash HTML with Images
+uv run https://tools.simonwillison.net/python/mistral_ocr.py \
+  my-file.pdf -d output-dir -he
+```
+
+```bash Inline Base64 Images
+uv run https://tools.simonwillison.net/python/mistral_ocr.py \
+  my-file.pdf -hi > output.html
+```
+</CodeGroup>
+
+### Options
+
+<ParamField path="--api-key" type="string">
+  Mistral API key (or use MISTRAL_API_KEY environment variable)
+</ParamField>
+
+<ParamField path="-o, --output" type="path">
+  Output file path (default: stdout)
+</ParamField>
+
+<ParamField path="-d, --output-dir" type="path">
+  Save output to a directory. Creates index.html for HTML or README.md for Markdown
+</ParamField>
+
+<ParamField path="-j, --json" type="flag">
+  Return raw JSON instead of markdown
+</ParamField>
+
+<ParamField path="-h, --html" type="flag">
+  Convert markdown to HTML
+</ParamField>
+
+<ParamField path="-i, --inline-images" type="flag">
+  Include images inline as data URIs
+</ParamField>
+
+<ParamField path="-e, --extract-images" type="flag">
+  Extract images as separate files (requires --output-dir)
+</ParamField>
+
+<ParamField path="-s, --silent" type="flag">
+  Suppress all output except requested data
+</ParamField>
+
+## q3_tts.py
+
+Generate speech audio using Qwen3-TTS and MLX Audio on macOS.
+
+<CodeGroup>
+```bash Basic Usage
+uv run https://tools.simonwillison.net/python/q3_tts.py 'Say this out loud'
+```
+
+```bash Custom Voice
+uv run https://tools.simonwillison.net/python/q3_tts.py \
+  'Say this out loud' \
+  -i 'Gruff pirate voice'
+```
+
+```bash Custom Output
+uv run https://tools.simonwillison.net/python/q3_tts.py \
+  'Say this out loud' \
+  -o custom_audio.wav
+```
+</CodeGroup>
+
+Files are saved as `output.wav`, then `output-2.wav`, etc. Use `-o` to specify a custom filename.
+
+<Note>
+The first time you run this, it will download a 4.5GB model file from Hugging Face.
+</Note>

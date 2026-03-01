@@ -1,0 +1,420 @@
+---
+title: Project Architecture
+description: Understanding the unique architecture of Simon Willison's Tools collection
+---
+
+## Overview
+
+Simon Willison's Tools is a collection of 200+ standalone web tools with a unique, lightweight architecture. Each tool is a self-contained HTML file that runs entirely in the browser, requiring no backend infrastructure.
+
+<Note>
+This architecture prioritizes simplicity, portability, and zero-dependency deployment. Each tool is a single HTML file that can be opened directly in a browser.
+</Note>
+
+## Repository Structure
+
+The tools repository follows a flat, simple structure:
+
+```
+/
+├── *.html                    # Individual tool files (200+ tools)
+├── *.docs.md                 # Documentation for each tool
+├── tests/
+│   ├── test_*.py            # Pytest test files
+│   ├── conftest.py          # Shared test fixtures
+│   └── *.png, *.pdf         # Test fixtures
+├── .github/workflows/
+│   ├── test.yml             # Runs pytest/Playwright tests
+│   └── pages.yml            # Deploys to GitHub Pages
+├── build_index.py           # Generates index.html from README.md
+├── build_colophon.py        # Generates colophon with commit history
+├── gather_links.py          # Collects tool metadata
+├── build_dates.py           # Generates dates.json
+├── build_by_month.py        # Generates chronological listing
+├── build.sh                 # Main build script
+├── README.md                # Main listing of all tools
+└── pyproject.toml           # Python dependencies for build/test
+```
+
+## Core Architecture Principles
+
+### 1. Self-Contained HTML Files
+
+Each tool is a complete, standalone HTML file containing:
+
+- **HTML structure** - Semantic markup for the UI
+- **Embedded CSS** - All styling in `<style>` tags
+- **Embedded JavaScript** - All functionality in `<script>` tags
+- **No build step required** - Tools work immediately when opened
+
+**Example structure:**
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tool Name</title>
+    <style>
+        /* All CSS here */
+    </style>
+</head>
+<body>
+    <!-- UI markup -->
+    <script>
+        // All JavaScript here
+    </script>
+</body>
+</html>
+```
+
+### 2. Tool File Naming Convention
+
+Each tool has two associated files:
+
+- **`{tool-name}.html`** - The tool itself (e.g., `query-string-stripper.html`)
+- **`{tool-name}.docs.md`** - Brief description + metadata (e.g., `query-string-stripper.docs.md`)
+
+### 3. Common HTML Patterns
+
+All tools follow consistent patterns:
+
+```html
+<!-- Responsive viewport -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+    /* Universal box-sizing */
+    * { box-sizing: border-box; }
+    
+    /* Centered max-width layout */
+    body {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    /* Mobile breakpoint */
+    @media (max-width: 600px) {
+        body { padding: 10px; }
+    }
+</style>
+```
+
+## Tool Architecture Patterns
+
+Tools fall into several architectural patterns based on their complexity:
+
+### Pattern 1: Simple Stateless Tools
+
+**Examples:** `query-string-stripper.html:1`, `escape-entities.html`
+
+**Characteristics:**
+- Input → Process → Output
+- Real-time event listeners
+- No external API calls
+- Minimal state management
+
+```javascript
+const input = document.getElementById('input');
+const output = document.getElementById('output');
+
+input.addEventListener('input', function() {
+    // Real-time processing
+    output.value = processInput(input.value);
+});
+```
+
+### Pattern 2: Tools with External APIs
+
+**Examples:** `jina-reader.html`, `github-issue.html`
+
+**Characteristics:**
+- Fetch data from external services
+- Handle loading states
+- Error handling for network failures
+
+```javascript
+fetch(`https://api.github.com/gists/${gistId}`)
+    .then(response => response.json())
+    .then(data => processData(data))
+    .catch(err => showError(err.message));
+```
+
+### Pattern 3: Tools with WebAssembly
+
+**Examples:** `sqlite-wasm.html`, `micropython.html`, `ocr.html`
+
+**Characteristics:**
+- Load WASM modules from CDN
+- Asynchronous initialization
+- Complex in-browser computation
+
+```javascript
+import sqlite3InitModule from 'https://cdn.jsdelivr.net/npm/@sqlite.org/sqlite-wasm@3.46.1-build4/sqlite-wasm/jswasm/sqlite3.mjs';
+
+const sqlite3 = await sqlite3InitModule({
+    print: console.log,
+    printErr: console.error,
+});
+```
+
+### Pattern 4: Canvas/Visualization Tools
+
+**Examples:** `mask-visualizer.html`, `bbox-cropper.html`
+
+**Characteristics:**
+- HTML5 Canvas for rendering
+- Image processing
+- Interactive drawing
+
+## Data Loading Patterns
+
+### URL Hash Parameters
+
+Many tools support loading data via URL fragments:
+
+```javascript
+// Load from URL hash: #gist=abc123
+function loadFromHash() {
+    const hash = window.location.hash;
+    const gistMatch = hash.match(/gist=([a-fA-F0-9]+)/i);
+    
+    if (gistMatch) {
+        loadGistJSON(gistMatch[1]);
+    }
+}
+
+window.addEventListener('hashchange', loadFromHash);
+```
+
+### File Input + Drag & Drop
+
+Standard pattern for file-based tools:
+
+```javascript
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+
+dropzone.addEventListener('click', () => fileInput.click());
+
+dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('drag-over');
+});
+
+dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    handleFiles(e.dataTransfer.files);
+});
+```
+
+### Clipboard API
+
+Tools that interact with the clipboard:
+
+```javascript
+// Read from clipboard
+navigator.clipboard.read().then((items) => {
+    items.forEach((item) => {
+        // Process clipboard types
+    });
+});
+
+// Write to clipboard
+navigator.clipboard.writeText(text).then(() => {
+    button.textContent = 'Copied!';
+});
+```
+
+## Common UI Components
+
+### Copy to Clipboard Button
+
+Standardized pattern used across tools:
+
+```javascript
+copyButton.addEventListener('click', () => {
+    navigator.clipboard.writeText(textToCopy.value).then(() => {
+        const originalText = copyButton.textContent;
+        copyButton.textContent = 'Copied!';
+        
+        setTimeout(() => {
+            copyButton.textContent = originalText;
+        }, 2000);
+    });
+});
+```
+
+### Error Messages
+
+Consistent error display pattern:
+
+```html
+<div id="error" class="error"></div>
+
+<style>
+.error {
+    color: #e74c3c;
+    background: #fef5f5;
+    padding: 12px;
+    border-radius: 4px;
+    display: none;
+}
+</style>
+
+<script>
+function showError(message) {
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+}
+</script>
+```
+
+### Loading States
+
+Standard loading indicator pattern:
+
+```javascript
+button.disabled = true;
+button.textContent = 'Loading...';
+
+try {
+    const result = await fetchData();
+    displayResult(result);
+} finally {
+    button.disabled = false;
+    button.textContent = 'Original text';
+}
+```
+
+## Build System
+
+The build system is Python-based and generates metadata and index pages:
+
+### Build Process
+
+Executed by `build.sh:1`:
+
+<Steps>
+  <Step title="Ensure full git history">
+    Check for shallow clones and fetch full history if needed for commit dates
+  </Step>
+  
+  <Step title="Gather metadata">
+    Run `gather_links.py` to collect tool metadata into `gathered_links.json`
+  </Step>
+  
+  <Step title="Build colophon">
+    Run `build_colophon.py` to generate `colophon.html` with commit history
+  </Step>
+  
+  <Step title="Build dates">
+    Run `build_dates.py` to generate `dates.json` for chronological sorting
+  </Step>
+  
+  <Step title="Build index">
+    Run `build_index.py` to convert `README.md` to `index.html`
+  </Step>
+  
+  <Step title="Build by-month listing">
+    Run `build_by_month.py` to generate chronological tool listing
+  </Step>
+  
+  <Step title="Inject footer">
+    Add `footer.js` script tag to all HTML files for consistent page weight tracking
+  </Step>
+  
+  <Step title="Build redirects">
+    Run `build_redirects.py` to create redirect pages from `_redirects.json`
+  </Step>
+</Steps>
+
+### Key Build Scripts
+
+**`gather_links.py`** - Collects metadata about all tools:
+- Extracts titles from HTML `<title>` tags
+- Reads descriptions from `.docs.md` files
+- Gets git commit history for each file
+- Extracts URLs from commit messages
+- Outputs `gathered_links.json`
+
+**`build_index.py:143`** - Generates homepage:
+- Converts `README.md` to HTML using Python markdown
+- Loads `tools.json` for "Recently added" and "Recently updated" sections
+- Injects responsive CSS and JavaScript
+- Outputs `index.html`
+
+**`build_colophon.py:31`** - Generates development history page:
+- Loads `gathered_links.json`
+- Renders each tool with commit history
+- Includes `.docs.md` descriptions rendered as HTML
+- Links to GitHub commits and transcripts
+- Outputs `colophon.html`
+
+## External Libraries
+
+Tools load libraries via CDN when needed:
+
+```html
+<!-- Markdown parsing -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.2/marked.min.js"></script>
+
+<!-- PDF rendering -->
+<script type="module">
+    import pdfjsDist from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.2.67/+esm';
+</script>
+
+<!-- OCR -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+<!-- SQLite in browser -->
+<script src="https://cdn.jsdelivr.net/npm/@sqlite.org/sqlite-wasm@3.46.1-build4/sqlite-wasm/jswasm/sqlite3.mjs" type="module"></script>
+
+<!-- Python in browser -->
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+```
+
+## Deployment
+
+Tools are deployed to **GitHub Pages** at `tools.simonwillison.net`:
+
+- Static hosting via GitHub Pages
+- No server-side code required
+- Each tool runs entirely in the browser
+- CDN-backed for fast global delivery
+
+## Design Philosophy
+
+<CardGroup cols={2}>
+  <Card title="Zero Dependencies" icon="cube">
+    Tools work without npm install, package.json, or build steps. Open any HTML file and it works.
+  </Card>
+  
+  <Card title="Browser-First" icon="browser">
+    All computation happens client-side. No servers, databases, or backend infrastructure needed.
+  </Card>
+  
+  <Card title="Portable" icon="arrow-right-arrow-left">
+    Each tool is a single file that can be saved, shared, or hosted anywhere. No dependencies to break.
+  </Card>
+  
+  <Card title="AI-Assisted" icon="robot">
+    Most tools are built using LLM-assisted development, documented in the colophon with full transcripts.
+  </Card>
+</CardGroup>
+
+## Summary
+
+The architecture prioritizes:
+
+1. **Simplicity** - Each tool is one HTML file
+2. **No build tools** - HTML/CSS/JS directly in the file
+3. **Browser APIs** - Leverage modern web platform features
+4. **External resources** - Load libraries from CDN when needed
+5. **Static hosting** - Deploy to GitHub Pages
+6. **Progressive enhancement** - Work without JavaScript when possible
+7. **Mobile-friendly** - Responsive design for all screen sizes
+
+This architecture enables rapid prototyping and experimentation while maintaining a production-ready site with 200+ working tools.

@@ -1,0 +1,156 @@
+---
+title: "Simon Willison's Tools"
+description: "A collection of 200+ HTML/JavaScript and Python tools, almost entirely generated using LLMs"
+---
+
+## Welcome to Simon Willison's Tools
+
+This is an experimental collection of miscellaneous tools built mostly with the help of Large Language Models (LLMs). The collection demonstrates the power of prompt-driven development with very low stakes, showcasing what's possible when you combine human creativity with AI assistance.
+
+All tools are hosted at [tools.simonwillison.net](https://tools.simonwillison.net/) and the complete source code is available on [GitHub](https://github.com/simonw/tools).
+
+<CardGroup cols={2}>
+  <Card
+    title="Browser Tools"
+    icon="browser"
+    href="/tools/image-media"
+  >
+    100+ HTML/JavaScript tools that run entirely in your browser. No server uploads required.
+  </Card>
+  
+  <Card
+    title="Python Scripts"
+    icon="python"
+    href="/python/overview"
+  >
+    Powerful command-line utilities you can run directly from their URLs using `uv run`.
+  </Card>
+  
+  <Card
+    title="Quick Start"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Learn how to use browser tools and run Python scripts in minutes.
+  </Card>
+  
+  <Card
+    title="Contribute"
+    icon="code-pull-request"
+    href="/contributing"
+  >
+    Add your own tools to the collection or improve existing ones.
+  </Card>
+</CardGroup>
+
+## Tool Categories
+
+Explore tools organized by purpose:
+
+<CardGroup cols={3}>
+  <Card
+    title="Image & Media"
+    icon="image"
+    href="/tools/image-media"
+  >
+    Social media cropping, OCR, image conversion, SVG tools, video processing
+  </Card>
+  
+  <Card
+    title="Text & Documents"
+    icon="file-lines"
+    href="/tools/text-document"
+  >
+    OCR, Markdown rendering, PDF comparison, clipboard utilities
+  </Card>
+  
+  <Card
+    title="Data & Time"
+    icon="clock"
+    href="/tools/data-time"
+  >
+    Timestamp conversion, timezone comparison, date calculation
+  </Card>
+  
+  <Card
+    title="LLM Playgrounds"
+    icon="robot"
+    href="/tools/llm-playgrounds"
+  >
+    Interact with Claude, Gemini, OpenAI, and Chrome's local models
+  </Card>
+  
+  <Card
+    title="Bluesky & Social"
+    icon="hashtag"
+    href="/tools/bluesky-social"
+  >
+    WebSocket firehose, timeline viewer, thread export, quote finder
+  </Card>
+  
+  <Card
+    title="GitHub & Dev"
+    icon="github"
+    href="/tools/github-dev"
+  >
+    GitHub API writer, issue viewer, wheel explorer
+  </Card>
+</CardGroup>
+
+## Built with LLMs
+
+Nearly every tool in this collection was created using AI assistance, particularly Claude. The [colophon](https://tools.simonwillison.net/colophon) provides commit messages and transcripts showing how each tool was built.
+
+<Info>
+Many tools used custom instructions [described in this blog post](https://simonwillison.net/2024/Dec/19/one-shot-python-tools/#custom-instructions) to streamline the development process.
+</Info>
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Privacy-First" icon="shield-check">
+    Most browser tools process everything locally. Your files never leave your device.
+  </Card>
+  
+  <Card title="No Installation" icon="download">
+    Python scripts run directly from URLs using `uv run` - no git clone or pip install needed.
+  </Card>
+  
+  <Card title="Open Source" icon="code">
+    All code is MIT licensed and available on GitHub for learning and modification.
+  </Card>
+  
+  <Card title="Real-World Tested" icon="check-double">
+    These are actual tools built to solve real problems, not just demos.
+  </Card>
+</CardGroup>
+
+## Getting Started
+
+<Steps>
+  <Step title="Choose Your Tool Type">
+    Browse **Browser Tools** for instant web-based utilities, or **Python Scripts** for command-line power tools.
+  </Step>
+  
+  <Step title="Try a Tool">
+    Browser tools work immediately in your browser. Python scripts can be run with `uv run` followed by the tool URL.
+  </Step>
+  
+  <Step title="Explore the Source">
+    Every tool links to its source code on GitHub. Learn how they work and adapt them for your needs.
+  </Step>
+</Steps>
+
+## Popular Tools
+
+Some of the most useful tools in the collection:
+
+- **[OCR](https://tools.simonwillison.net/ocr)** - Recognize text from images and PDFs directly in your browser
+- **[Social Media Cropper](https://tools.simonwillison.net/social-media-cropper)** - Crop images to 2×1 for social sharing
+- **[Bluesky WebSocket Firehose](https://tools.simonwillison.net/bluesky-firehose)** - Watch real-time activity on Bluesky
+- **[Claude Token Counter](https://tools.simonwillison.net/claude-token-counter)** - Count tokens for Claude prompts
+- **[JSON Extractor](https://tools.simonwillison.net/python/json_extractor.py)** - Extract valid JSON objects from mixed text
+
+<Note>
+Check the [quickstart guide](/quickstart) to learn how to use both browser tools and Python scripts.
+</Note>

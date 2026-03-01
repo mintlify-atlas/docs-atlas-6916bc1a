@@ -1,0 +1,85 @@
+---
+title: "Bluesky and Social Media Tools"
+description: "Tools for analyzing Bluesky posts, threads, and real-time activity"
+icon: "butterfly"
+---
+
+A suite of tools for working with Bluesky social network data. Monitor real-time activity, export threads, resolve user identifiers, and analyze post engagement—all running client-side in your browser.
+
+## Real-Time Monitoring
+
+<Card
+  title="Bluesky WebSocket Firehose"
+  icon="fire"
+  href="https://tools.simonwillison.net/bluesky-firehose"
+>
+  Watch real-time Bluesky activity by connecting to the Jetstream WebSocket service. Send custom JSON messages to filter by collection type, specific user DIDs, or other parameters. All events are logged for debugging and inspection.
+</Card>
+
+<Note>
+  Use Ctrl/Cmd + Enter to quickly send configuration updates to the WebSocket connection in the Firehose tool.
+</Note>
+
+## User and Identity Tools
+
+<CardGroup cols={2}>
+  <Card
+    title="Bluesky Resolve DID"
+    icon="fingerprint"
+    href="https://tools.simonwillison.net/bluesky-resolve"
+  >
+    Convert a Bluesky handle (like `simonwillison.net`) into a DID identifier
+  </Card>
+  
+  <Card
+    title="Bluesky Timeline"
+    icon="timeline"
+    href="https://tools.simonwillison.net/bluesky-timeline"
+  >
+    View a user's recent posts and replies in chronological order
+  </Card>
+</CardGroup>
+
+## Thread and Content Tools
+
+<CardGroup cols={2}>
+  <Card
+    title="Bluesky Thread Export"
+    icon="file-export"
+    href="https://tools.simonwillison.net/bluesky-thread"
+  >
+    Save a complete Bluesky thread to Markdown format
+  </Card>
+  
+  <Card
+    title="Bluesky Quote Finder"
+    icon="quote-left"
+    href="https://tools.simonwillison.net/bluesky-quote-finder"
+  >
+    Find all quote posts of a specific Bluesky post URL
+  </Card>
+</CardGroup>
+
+## Other Social Tools
+
+<CardGroup cols={2}>
+  <Card
+    title="Event Planner"
+    icon="calendar-days"
+    href="https://tools.simonwillison.net/event-planner"
+  >
+    Rough schedule planner with data stored in localStorage
+  </Card>
+  
+  <Card
+    title="Passkeys Demo"
+    icon="key"
+    href="https://tools.simonwillison.net/passkeys"
+  >
+    Experiment with browser-based passkey authentication
+  </Card>
+</CardGroup>
+
+<Tip>
+  Bluesky tools work directly with the Bluesky API and AT Protocol. No authentication is required for public data access.
+</Tip>

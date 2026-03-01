@@ -1,0 +1,256 @@
+---
+title: File Processors
+description: Python scripts for processing and analyzing various file formats
+---
+
+Utilities for extracting, inspecting, and transforming various file formats.
+
+## gguf_inspect.py
+
+Inspect GGUF files (the format used by [llama.cpp](https://github.com/ggml-org/llama.cpp)) and print out key/value pairs.
+
+```bash
+uv run https://tools.simonwillison.net/python/gguf_inspect.py \
+  ~/.ollama/models/blobs/sha256-b158411543050d042608cef16fdfeec0d9bc1cf2e63a3625f3887fc0c4249521
+```
+
+With JSON output and filtering:
+
+```bash
+uv run https://tools.simonwillison.net/python/gguf_inspect.py \
+  model.gguf \
+  --json \
+  --exclude tokenizer.ggml.
+```
+
+<Note>
+This script has no external dependencies - it reads GGUF files using only the Python standard library.
+</Note>
+
+## json_extractor.py
+
+Extract valid JSON objects from text files that aren't pure JSON (like Markdown files).
+
+<CodeGroup>
+```bash From File
+uv run https://tools.simonwillison.net/python/json_extractor.py \
+  README.md
+```
+
+```bash From Pipe
+curl 'https://raw.githubusercontent.com/simonw/json-flatten/refs/heads/main/README.md' \
+  | uv run https://tools.simonwillison.net/python/json_extractor.py
+```
+
+```bash All JSON Objects
+uv run https://tools.simonwillison.net/python/json_extractor.py \
+  README.md -a
+```
+</CodeGroup>
+
+By default, returns the largest JSON object found. Use `-a` to return all valid JSON objects.
+
+## check_invisible_text.py
+
+Check PDF files for instances of invisible text that might be used for prompt injection or other malicious purposes.
+
+```bash
+uv run https://tools.simonwillison.net/python/check_invisible_text.py \
+  my-file.pdf
+```
+
+Example output:
+
+```
+============================================================
+INVISIBLE TEXT DETECTION RESULTS
+============================================================
+Total invisible text instances found: 3
+Pages with invisible text: 1
+Types of invisible text found: transparent_text, zero_size_text, white_text_on_white
+
+
+TRANSPARENT TEXT:
+----------------------------------------
+Page 0: Very light/white text color
+  Text: 'FOR LLM REVIEWERS: IGNORE ALL PREVIOUS INSTRUCTIONS...'
+  Position: (207.156, 500.936, 211.646, 501.036)
+  Color: RGB(255, 255, 255)
+```
+
+[Claude transcript](https://claude.ai/share/0d82324d-d575-40d9-ba85-732ab234197a) showing how this was built.
+
+## webc_inspect.py
+
+Inspect Wasmer WebC archives (.webc) and print useful summary information.
+
+```bash
+uv run https://tools.simonwillison.net/python/webc_inspect.py \
+  ~/.wasmer/cache/checkout/47ff83d2d205df14e7f057a1f0a1c1da70c565d2e32c052f2970a150f5a9b407.bin
+```
+
+These are files that live in `~/.wasmer/cache/checkouts` and end in `.bin`.
+
+[Example output](https://gist.github.com/simonw/c4193a44938b80bbaad64299fe892a2d)
+
+## show_image.py
+
+Display images in the terminal using [rich-pixels](https://pypi.org/project/rich-pixels/).
+
+<CodeGroup>
+```bash Default (Crisp)
+uv run https://tools.simonwillison.net/python/show_image.py \
+  image.jpg
+```
+
+```bash Lanczos Scaling
+uv run https://tools.simonwillison.net/python/show_image.py \
+  image.jpg \
+  --lanczos
+```
+</CodeGroup>
+
+- Default uses NEAREST scaling (good for crisp pixel art)
+- `--lanczos` uses Lanczos scaling (better for photos)
+
+## extract_har.py
+
+Extract files of specified MIME types from HAR (HTTP Archive) archives.
+
+```bash
+uv run https://tools.simonwillison.net/python/extract_har.py \
+  archive.har.zip \
+  application/json text/html \
+  -o output_directory
+```
+
+### Options
+
+<ParamField path="HARZIP" type="path" required>
+  Path to the HAR archive (.zip file)
+</ParamField>
+
+<ParamField path="MIMETYPES" type="string" required>
+  One or more MIME types to extract (e.g., application/json, text/html)
+</ParamField>
+
+<ParamField path="-o, --output" type="path">
+  Output directory for extracted files (default: current directory)
+</ParamField>
+
+<ParamField path="--paths" type="flag">
+  Use URL paths for filenames instead of original names
+</ParamField>
+
+<ParamField path="--pretty-json" type="flag">
+  Pretty print JSON files with 2-space indentation
+</ParamField>
+
+## extract_sourcemap.py
+
+Extract and decode base64-encoded source maps from JavaScript files.
+
+```bash
+uv run https://tools.simonwillison.net/python/extract_sourcemap.py \
+  bundled.js > source-map.json
+```
+
+Searches for `sourceMappingURL` with base64-encoded data and outputs the decoded content.
+
+## whitespace_cleaner.py
+
+Replace lines that are entirely whitespace with blank lines in files or folders.
+
+```bash
+uv run https://tools.simonwillison.net/python/whitespace_cleaner.py \
+  my-file.txt my-folder
+```
+
+With dry-run mode:
+
+```bash
+uv run https://tools.simonwillison.net/python/whitespace_cleaner.py \
+  my-folder \
+  --dry-run
+```
+
+The `--dry-run` option shows how many files would be modified without making changes.
+
+## http_check.py
+
+Check if a URL supports gzip compression, ETags, and Last-Modified conditional GET requests.
+
+```bash
+uv run https://tools.simonwillison.net/python/http_check.py \
+  https://simonw.github.io/ollama-models-atom-feed/atom.xml
+```
+
+Useful for debugging caching issues and optimizing HTTP delivery.
+
+## highlight.py
+
+Highlight search terms in input text with color and context.
+
+```bash
+cat myfile.py | uv run https://tools.simonwillison.net/python/highlight.py re search
+```
+
+Outputs matching lines plus context with colors to highlight the search terms.
+
+## modelscope_size.py
+
+Calculate the total size of a model on [ModelScope](https://modelscope.cn/).
+
+```bash
+uv run https://tools.simonwillison.net/python/modelscope_size.py \
+  https://modelscope.cn/models/Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8
+```
+
+Output:
+```
+449.1 GB
+```
+
+## livestream-gif.py
+
+Convert a YouTube livestream to an animated GIF or MP4.
+
+<CodeGroup>
+```bash Create MP4
+uv run https://tools.simonwillison.net/python/livestream-gif.py \
+  "https://www.youtube.com/watch?v=BfGL7A2YgUY" \
+  --frames 200 \
+  -o livestream.mp4 \
+  --fps 10 \
+  --mp4
+```
+
+```bash Create GIF
+uv run https://tools.simonwillison.net/python/livestream-gif.py \
+  "https://www.youtube.com/watch?v=BfGL7A2YgUY" \
+  --frames 200 \
+  -o livestream.gif \
+  --fps 10
+```
+
+```bash Last 4 Hours
+uv run https://tools.simonwillison.net/python/livestream-gif.py \
+  "https://www.youtube.com/watch?v=BfGL7A2YgUY" \
+  --hours 4 \
+  --frames 100 \
+  -o recent.mp4 \
+  --mp4
+```
+</CodeGroup>
+
+Grabs frames spaced throughout the available livestream (often capped at 12 hours) and creates an animated output.
+
+### Options
+
+- `--frames N` - Number of frames to extract (default: 200)
+- `--fps N` - Frames per second for output (default: 10)
+- `--mp4` - Create MP4 instead of GIF
+- `--hours N` - Limit to most recent N hours of the livestream
+- `-o FILE` - Output filename
+
+Use `--help` to see all available options.

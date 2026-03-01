@@ -1,0 +1,389 @@
+---
+title: "Contributing"
+description: "How to contribute new tools or improve existing ones"
+---
+
+## About This Project
+
+This collection is an experiment in **prompt-driven development with very low stakes**. Nearly every tool was built using Large Language Models (LLMs), particularly Claude, with detailed transcripts showing the creation process.
+
+The goal is to create useful, single-purpose tools that solve real problems while demonstrating what's possible with AI-assisted development.
+
+## Philosophy
+
+<CardGroup cols={2}>
+  <Card title="Single Purpose" icon="bullseye">
+    Each tool should do one thing well. Avoid feature creep.
+  </Card>
+  
+  <Card title="Self-Contained" icon="box">
+    Browser tools should be single HTML files. Python scripts should use inline dependencies.
+  </Card>
+  
+  <Card title="Privacy-First" icon="shield-check">
+    When possible, process data client-side. Clearly indicate when data leaves the user's device.
+  </Card>
+  
+  <Card title="Document the Process" icon="book">
+    Share how you built it. Link to LLM transcripts, blog posts, or commit messages.
+  </Card>
+</CardGroup>
+
+## Ways to Contribute
+
+### 1. Add a New Browser Tool
+
+Browser tools are HTML files with embedded JavaScript and CSS.
+
+<Steps>
+  <Step title="Create a single HTML file">
+    Build a self-contained tool in a single HTML file. Include all JavaScript and CSS inline.
+    
+    Structure:
+    ```html
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Your Tool Name</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        /* Your CSS here */
+      </style>
+    </head>
+    <body>
+      <h1>Your Tool Name</h1>
+      <!-- Your interface -->
+      
+      <p><a href="https://github.com/simonw/tools/blob/main/your-tool.html">Source code</a></p>
+      
+      <script>
+        // Your JavaScript here
+      </script>
+    </body>
+    </html>
+    ```
+  </Step>
+  
+  <Step title="Follow naming conventions">
+    - Use lowercase with hyphens: `social-media-cropper.html`
+    - Keep names descriptive and concise
+    - File name should match the URL slug
+  </Step>
+  
+  <Step title="Add to the index">
+    Edit the main README.md to add your tool to the appropriate category:
+    
+    ```markdown
+    ## Image and media
+    - [Your Tool Name](https://tools.simonwillison.net/your-tool) description
+    ```
+  </Step>
+  
+  <Step title="Test thoroughly">
+    - Test in multiple browsers (Chrome, Firefox, Safari)
+    - Verify mobile responsiveness
+    - Check that it works with various file types/inputs
+    - Ensure privacy: verify data doesn't leave the browser
+  </Step>
+</Steps>
+
+### 2. Add a New Python Script
+
+Python scripts use [PEP 723](https://peps.python.org/pep-0723/) inline script metadata for dependencies.
+
+<Steps>
+  <Step title="Create the script with inline metadata">
+    Use the `# /// script` block for dependencies:
+    
+    ```python
+    #!/usr/bin/env python3
+    # /// script
+    # requires-python = ">=3.10"
+    # dependencies = [
+    #   "requests",
+    #   "rich",
+    # ]
+    # ///
+    """
+    Description of what your tool does.
+    """
+    
+    import argparse
+    import sys
+    
+    def main():
+        parser = argparse.ArgumentParser(
+            description="Your tool description"
+        )
+        parser.add_argument("input", help="Input file or data")
+        parser.add_argument("-o", "--output", help="Output file")
+        args = parser.parse_args()
+        
+        # Your implementation here
+    
+    if __name__ == "__main__":
+        sys.exit(main())
+    ```
+  </Step>
+  
+  <Step title="Add to python/ directory">
+    Place your script in the `python/` directory:
+    ```bash
+    mv your_script.py ~/tools/python/your_script.py
+    chmod +x ~/tools/python/your_script.py
+    ```
+  </Step>
+  
+  <Step title="Document in python/README.md">
+    Add usage examples to the Python README:
+    
+    ```markdown
+    ## your_script.py
+    
+    Brief description of what it does.
+    
+    ```bash
+    uv run https://tools.simonwillison.net/python/your_script.py \
+      input.txt --output result.txt
+    ```
+    
+    Additional usage notes or options.
+    ```
+  </Step>
+  
+  <Step title="Test with uv run">
+    Verify it works when run directly from URL:
+    ```bash
+    # Test locally first
+    uv run python/your_script.py test.txt
+    
+    # After pushing, test from URL
+    uv run https://tools.simonwillison.net/python/your_script.py test.txt
+    ```
+  </Step>
+</Steps>
+
+### 3. Improve Existing Tools
+
+Enhancements to existing tools are welcome:
+
+- Fix bugs or edge cases
+- Improve error handling
+- Add new features that align with the tool's purpose
+- Enhance accessibility
+- Improve mobile responsiveness
+- Add better documentation
+
+<Warning>
+Keep improvements focused. If you're adding major new functionality, consider creating a separate tool instead.
+</Warning>
+
+## Development Guidelines
+
+### Browser Tools Best Practices
+
+<AccordionGroup>
+  <Accordion title="Privacy & Security">
+    - Process data client-side when possible
+    - Use CORS-enabled CDNs for external libraries
+    - Clearly indicate if data leaves the browser
+    - Avoid unnecessary analytics or tracking
+    - Don't include API keys in client-side code
+  </Accordion>
+  
+  <Accordion title="User Experience">
+    - Support drag-and-drop for file uploads
+    - Handle clipboard paste events where appropriate
+    - Provide clear error messages
+    - Show loading indicators for long operations
+    - Make results easy to copy or download
+    - Include a "Load example" button when practical
+  </Accordion>
+  
+  <Accordion title="Code Quality">
+    - Keep code readable and well-commented
+    - Use modern JavaScript (ES6+)
+    - Minimize external dependencies
+    - Include source code link in the page footer
+    - Add viewport meta tag for mobile support
+  </Accordion>
+</AccordionGroup>
+
+### Python Scripts Best Practices
+
+<AccordionGroup>
+  <Accordion title="Dependencies">
+    - Use PEP 723 inline script metadata
+    - Minimize dependencies when possible
+    - Pin versions for critical dependencies
+    - Document why each dependency is needed
+  </Accordion>
+  
+  <Accordion title="CLI Design">
+    - Use argparse for argument parsing
+    - Provide helpful `--help` text
+    - Accept input from stdin when appropriate
+    - Write errors to stderr, not stdout
+    - Return appropriate exit codes
+    - Support common flags: `-h`, `--help`, `-v`, `--verbose`
+  </Accordion>
+  
+  <Accordion title="Code Quality">
+    - Follow PEP 8 style guidelines
+    - Include a docstring explaining the purpose
+    - Add type hints where helpful
+    - Handle errors gracefully
+    - Make it executable: `#!/usr/bin/env python3`
+  </Accordion>
+</AccordionGroup>
+
+## Submission Process
+
+<Steps>
+  <Step title="Fork the repository">
+    Fork [simonw/tools](https://github.com/simonw/tools) on GitHub.
+  </Step>
+  
+  <Step title="Create a branch">
+    ```bash
+    git checkout -b add-your-tool-name
+    ```
+  </Step>
+  
+  <Step title="Add your tool">
+    - Add the tool file(s)
+    - Update the appropriate README
+    - Test thoroughly
+  </Step>
+  
+  <Step title="Commit with context">
+    Write a descriptive commit message. Include:
+    - What the tool does
+    - How you built it (LLM used, manual coding, etc.)
+    - Link to transcript if you have one
+    
+    Example:
+    ```bash
+    git add your-tool.html README.md
+    git commit -m "Add social media cropper tool
+    
+    Built with Claude to crop images to 2:1 aspect ratio for social media.
+    Uses Cropper.js for the interface.
+    Transcript: https://claude.ai/share/..."
+    ```
+  </Step>
+  
+  <Step title="Push and create PR">
+    ```bash
+    git push origin add-your-tool-name
+    ```
+    
+    Create a pull request on GitHub with:
+    - Clear description of the tool
+    - How you tested it
+    - Any relevant links (transcripts, blog posts)
+  </Step>
+</Steps>
+
+## Document Your Process
+
+One of the most valuable aspects of this project is showing **how** tools are built with LLMs.
+
+### Share Your Transcript
+
+If you used an LLM to build your tool:
+
+<Steps>
+  <Step title="Save the conversation">
+    Export or share the conversation from your LLM tool:
+    - Claude: Use the share button to create a public link
+    - ChatGPT: Export conversation or use share link
+    - Other tools: Copy/paste or screenshot key moments
+  </Step>
+  
+  <Step title="Link in commit message">
+    Include the transcript link in your commit message or PR description.
+  </Step>
+  
+  <Step title="Add to colophon">
+    The [colophon](https://tools.simonwillison.net/colophon) page catalogs all tools with their creation stories. Include:
+    - Link to transcript
+    - Which LLM you used
+    - Any interesting challenges or iterations
+  </Step>
+</Steps>
+
+### Write a Blog Post
+
+Consider writing about your experience:
+- What problem were you solving?
+- How did you prompt the LLM?
+- What worked well? What didn't?
+- What did you learn?
+
+See Simon's [blog posts about tools](https://simonwillison.net/tags/tools/) for examples.
+
+## Custom Instructions
+
+Many tools in this collection were built using custom instructions for the LLM. These help create consistent, high-quality tools with less prompting.
+
+For Python tools, see [this blog post](https://simonwillison.net/2024/Dec/19/one-shot-python-tools/#custom-instructions) about the custom instructions used.
+
+## Testing
+
+### Browser Tools
+
+```bash
+# Serve locally for testing
+python3 -m http.server 8000
+# Visit http://localhost:8000/your-tool.html
+```
+
+Test checklist:
+- [ ] Works in Chrome/Edge
+- [ ] Works in Firefox
+- [ ] Works in Safari
+- [ ] Mobile responsive
+- [ ] Drag and drop works
+- [ ] Paste from clipboard works (if applicable)
+- [ ] Error handling is clear
+- [ ] No console errors
+
+### Python Scripts
+
+```bash
+# Test locally
+uv run python/your_script.py test-input.txt
+
+# Test with various inputs
+uv run python/your_script.py --help
+uv run python/your_script.py empty.txt
+echo "test" | uv run python/your_script.py
+
+# Test after pushing (replace with your fork URL)
+uv run https://raw.githubusercontent.com/yourname/tools/main/python/your_script.py test.txt
+```
+
+Test checklist:
+- [ ] Help text is clear
+- [ ] Handles missing files gracefully
+- [ ] stdin input works (if applicable)
+- [ ] Error messages go to stderr
+- [ ] Exit codes are appropriate
+- [ ] Dependencies install correctly
+
+## Questions?
+
+The code lives in [simonw/tools](https://github.com/simonw/tools). Feel free to:
+
+- Open an issue for questions or suggestions
+- Start a discussion for ideas
+- Submit a PR for improvements
+
+<Card
+  title="View on GitHub"
+  icon="github"
+  href="https://github.com/simonw/tools"
+>
+  Explore the repository and start contributing
+</Card>
